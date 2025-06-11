@@ -1,6 +1,5 @@
 from sys import argv
-
-
+from functions.get_files_info import get_files_info 
 def main():
     import os, sys
     from dotenv import load_dotenv
@@ -28,6 +27,6 @@ def main():
         print(f"User prompt: {user_prompt}")
         print(f"Prompt tokens:{response.usage_metadata.prompt_token_count}")
         print(f"Response tokens:{response.usage_metadata.candidates_token_count}")
-
+    
 if __name__ == "__main__":
     main()
