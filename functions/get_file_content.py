@@ -1,33 +1,39 @@
 import os
+from google.genai import types
+from config import MAX_CHARS
 
 
-def get_file_content(working_dir, file_path):
-    try:
-        # get abs path of working_dir
-        work_dir_abs = os.path.abspath(working_dir)
-
-        # get abs filepath and verify file_path lives inside working dir.
-        file_path_abs = os.path.abspath(os.path.join(work_dir_abs, file_path))
-        valid_dir = file_path_abs.startswith(work_dir_abs)
-
-        # check if it's a valid file.
-        is_valid_file = os.path.isfile(file_path_abs)
-    except Exception as e:
-        return f"Error: {e}"
-    # set char length of text we will pass to the AI model
-    MAX_CHARS = 10000
-
-    # if a file is not inside our working directory or is not a valid filename
-    if not valid_dir:
-        return f'Error: Cannot read "{
-            file_path
-        }" as it is outside the permitted working directory'
-    elif not is_valid_file:
+def get_file_content(working_directory, file_path):
+    abs_working_dir = os.path.abspath(working_directory)
+    abs_file_path = os.path.abspath(os.path.join(working_directory, file_path))
+    if not abs_file_path.startswith(abs_working_dir):
+        return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
+    if not os.path.isfile(abs_file_path):
         return f'Error: File not found or is not a regular file: "{file_path}"'
-    else:
-        try:
-            with open(file_path_abs, "r") as f:
-                file_content_str = f.read(MAX_CHARS)
-                return file_content_str
-        except Exception as e:
-            return f"Error: {e}"
+    try:
+        with open(abs_file_path, "r") as f:
+            content = f.read(MAX_CHARS)
+            if len(content) == MAX_CHARS:
+                content += (
+                    f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
+                )
+        return content
+    except Exception as e:
+        return f'Error reading file "{file_path}": {e}'
+
+
+schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description=f"Reads and returns the first {MAX_CHARS} characters of the content from a specified file within the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The path to the file whose content should be read, relative to the working directory.",
+            ),
+        },
+        required=["file_path"],
+    ),
+)
+
